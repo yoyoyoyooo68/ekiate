@@ -1,0 +1,40 @@
+name: deploy
+
+# 手動実行（ダイヤ改正時など）。合言葉は Secrets の PASSPHRASE に置く。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # 現状はダミーデータ。ODPT 承認後は fetch / build-data の処理をここに足す。
+      - run: npm run build
+      - name: 合言葉でデータを暗号化
+        run: npm run encrypt
+        env:
+          PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
