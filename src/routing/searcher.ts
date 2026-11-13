@@ -1,6 +1,6 @@
 import { decodeTimetable } from '../data/timetable';
 import type { Network } from '../types';
-import { buildGraph, reconstruct, scan, type Graph, type Leg } from './csa';
+import { buildGraph, lastDepartureOf, reconstruct, scan, type Graph, type Leg } from './csa';
 
 /** 経路探索の窓口。ゲームのルールはこれ越しに探索する（Worker でも直接でも同じ形）。 */
 export interface Searcher {
@@ -8,10 +8,15 @@ export interface Searcher {
   reach(start: number, boardAt: number): Promise<Int32Array>;
   /** start を boardAt 以降に出発して target に最も早く着く経路 */
   path(start: number, boardAt: number, target: number): Promise<Leg[] | null>;
+  /** その駅の最終発車時刻（列車が無ければ null） */
+  lastDeparture(station: number): Promise<number | null>;
 }
 
 export class LocalSearcher implements Searcher {
   constructor(private g: Graph) {}
+  async lastDeparture(station: number) {
+    return lastDepartureOf(this.g, station);
+  }
   async reach(start: number, boardAt: number) {
     return scan(this.g, start, boardAt).arr;
   }
@@ -66,6 +71,9 @@ export class WorkerSearcher implements Searcher {
   }
   async path(start: number, boardAt: number, target: number) {
     return (await this.call({ type: 'path', start, boardAt, target })).legs as Leg[] | null;
+  }
+  async lastDeparture(station: number) {
+    return (await this.call({ type: 'last', station })).last as number | null;
   }
 }
 

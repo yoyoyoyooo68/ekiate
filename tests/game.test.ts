@@ -119,3 +119,23 @@ describe('暗号化', () => {
     await expect(decryptBytes(enc, 'bad')).rejects.toBeInstanceOf(WrongPassphraseError);
   });
 });
+
+describe('あきらめ・最終電車', () => {
+  it('あきらめると負けになり、結果テキストに出る', async () => {
+    const { net, searcher } = setup(3, [[0, 1, 400, 410, 0], [1, 2, 420, 430, 1]]);
+    const s = newSession(net, searcher, 'x', 'seed');
+    s.game = new Game(net, searcher, 2);
+    await s.game.step(0);
+    s.game.giveUp();
+    expect(s.game.status).toBe('lost');
+    expect(s.game.gaveUp).toBe(true);
+    expect(s.game.canGo(1)).toBe(false);
+    expect(shareText(s, 'https://e/')).toContain('あきらめ');
+  });
+
+  it('駅の最終発車時刻を返す', async () => {
+    const { searcher } = setup(3, [[0, 1, 400, 410, 0], [0, 1, 500, 510, 1]]);
+    expect(await searcher.lastDeparture(0)).toBe(500);
+    expect(await searcher.lastDeparture(2)).toBeNull();
+  });
+});

@@ -39,7 +39,7 @@ export function themeAt(minute: number): Theme {
   }
   const lum = (0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]) / 255;
   const night = 1 - Math.min(1, Math.max(0, (lum - 0.2) / 0.5));
-  const text = mix([31, 36, 48], [232, 236, 255], night);
+  const text = mix([20, 33, 61], [232, 236, 255], night);
   return {
     bg: css(bg),
     text: css(text),

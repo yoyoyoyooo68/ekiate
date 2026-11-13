@@ -37,6 +37,13 @@ export function buildGraph(tt: Timetable, numStations: number, pairs: [number, n
   return { tt, numStations, group, numGroups: ids.size, numTrips: maxTrip + 1 };
 }
 
+/** その駅の最終発車時刻（列車が無ければ null） */
+export function lastDepartureOf(g: Graph, station: number): number | null {
+  let best = -1;
+  for (let i = 0; i < g.tt.count; i++) if (g.tt.depStation[i] === station && g.tt.dep[i] > best) best = g.tt.dep[i];
+  return best < 0 ? null : best;
+}
+
 export type ScanResult = {
   /** 各駅への最早到着時刻（INF = 今日中に行けない）。出発駅は列車で戻ってきたときだけ値が入る */
   arr: Int32Array;

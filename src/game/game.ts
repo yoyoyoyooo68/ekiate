@@ -17,11 +17,21 @@ export class Game {
   /** いまいる駅から次に出る電車で行ける各駅への到着時刻 */
   reach: Int32Array | null = null;
 
+  /** あきらめて負けになった */
+  gaveUp = false;
+
   constructor(
     readonly net: Network,
-    private searcher: Searcher,
+    readonly searcher: Searcher,
     readonly answer: number,
   ) {}
+
+  giveUp(): void {
+    if (this.status !== 'playing') return;
+    this.status = 'lost';
+    this.gaveUp = true;
+    this.reach = null;
+  }
 
   get current(): number {
     return this.moves.length ? this.moves[this.moves.length - 1].station : -1;

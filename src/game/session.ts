@@ -15,7 +15,7 @@ export type Session = {
   versionMismatch?: boolean;
 };
 
-type Saved = { seed: string; mode: Mode; version: string; moves: string[] };
+type Saved = { seed: string; mode: Mode; version: string; moves: string[]; gaveUp?: boolean };
 
 export function newSession(net: Network, searcher: Searcher, seed: string, mode: Mode): Session {
   const s = normalizeSeed(seed);
@@ -38,6 +38,7 @@ export function saveSession(net: Network, s: Session): void {
     mode: s.mode,
     version: s.version,
     moves: s.game.moves.map((m) => net.stations[m.station].id),
+    gaveUp: s.game.gaveUp || undefined,
   };
   try {
     storage()?.setItem(keyOf(s.mode, s.seed), JSON.stringify(data));
@@ -73,6 +74,7 @@ export async function loadSession(
       if (i < 0) return null;
       await s.game.step(i);
     }
+    if (d.gaveUp) s.game.giveUp();
     return s;
   } catch {
     return null;
@@ -93,7 +95,9 @@ export function shareText(s: Session, baseUrl: string): string {
   const won = g.status === 'won';
   const head = won
     ? `駅当て ${label} ✅ ${g.moves.length}手 / ${fmt(g.time)}着`
-    : `駅当て ${label} ❌ 終電 / ${fmt(g.time)}`;
+    : g.gaveUp
+      ? `駅当て ${label} 🏳️ あきらめ / ${fmt(g.time)}`
+      : `駅当て ${label} ❌ 終電 / ${fmt(g.time)}`;
   const marks = g.moves.map((m, i) => (won && i === g.moves.length - 1 ? EMOJI_END : moveEmoji(m.hint, m.time)));
   const url = `${baseUrl}?seed=${encodeURIComponent(s.seed)}&v=${encodeURIComponent(s.version)}`;
   return `${head}\n${marks.join('')}\nデータ版 ${s.version}\n${url}`;

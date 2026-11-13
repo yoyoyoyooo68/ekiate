@@ -3,7 +3,7 @@ type Child = Node | string | null | false | undefined;
 export function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   props?: Record<string, any> | null,
-  ...children: Child[]
+  ...children: (Child | null)[]
 ): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(props ?? {})) {

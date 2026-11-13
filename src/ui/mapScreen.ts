@@ -4,21 +4,26 @@ import type { Network } from '../types';
 import { h } from './dom';
 import { stationSearch } from './search';
 
-/** マップだけを見る画面（時刻表示なし・昼の配色） */
+/** マップだけを見る画面（予習・確認用。拡大すると駅名が出る。時刻と明るさの変化は無し） */
 export function mapScreen(net: Network, onBack: () => void): { el: HTMLElement; destroy: () => void } {
   const wrap = h('div', { class: 'mapwrap full' });
   const label = h('div', { class: 'map-label hidden' });
-  let map: MapView;
   const select = (i: number | null) => {
-    if (i === null) {
-      label.classList.add('hidden');
-      map.setSelected(-1);
-      return;
-    }
-    map.setSelected(i);
+    map.setSelected(i ?? -1);
+    if (i === null) return;
+    map.lineHighlight = -1;
     const st = net.stations[i];
-    label.textContent = `${st.name}　${st.lines.map((l) => net.lines[l].name).join('・')}`;
-    label.classList.remove('hidden');
+    show(`${st.name}　${st.lines.map((l) => net.lines[l].name).join('・')}`);
+  };
+  const selectLine = (li: number | null) => {
+    map.lineHighlight = li ?? -1;
+    map.invalidate();
+    if (li === null) show(null);
+    else show(`${net.lines[li].name}（${net.lines[li].company}）`);
+  };
+  const show = (t: string | null) => {
+    label.textContent = t ?? '';
+    label.classList.toggle('hidden', !t);
   };
   const el = h('div', { class: 'screen game' },
     h('header', { class: 'topbar' },
@@ -33,7 +38,11 @@ export function mapScreen(net: Network, onBack: () => void): { el: HTMLElement; 
   el.style.setProperty('--fg', t.text);
   el.style.setProperty('--panel', t.panel);
   el.style.setProperty('--border', t.border);
-  map = new MapView(wrap, net, { onSelect: select });
+  const map: MapView = new MapView(wrap, net, {
+    labels: 'zoom',
+    onSelect: (i) => { if (i === null) show(null); select(i); },
+    onSelectLine: selectLine,
+  });
   map.setTime(720);
   return { el, destroy: () => map.destroy() };
 }

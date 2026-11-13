@@ -10,6 +10,7 @@ import { mapScreen } from './mapScreen';
 import { rulesSlides } from './rules';
 
 const PASS_KEY = 'ekiate:pass';
+const RULES_KEY = 'ekiate:rulesSeen';
 const store = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* */ } },
@@ -100,6 +101,8 @@ export class App {
       const v = params.get('v');
       history.replaceState(null, '', location.pathname);
       void this.play('seed', seed, v !== null && v !== this.net.version);
+    } else if (!store.get(RULES_KEY)) {
+      this.openRules(); // 初回起動はルール説明から
     } else this.menu();
   }
 
@@ -136,7 +139,10 @@ export class App {
     this.show(s.el, s.destroy);
   }
   private openRules() {
-    this.show(rulesSlides(() => this.menu()));
+    this.show(rulesSlides(() => {
+      store.set(RULES_KEY, '1');
+      void this.menu();
+    }));
   }
 
   private async play(mode: Mode, rawSeed: string, versionMismatch = false) {
