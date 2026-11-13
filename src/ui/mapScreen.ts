@@ -1,3 +1,4 @@
+import { geometryOf } from '../map/geometry';
 import { MapView } from '../map/MapView';
 import { themeAt } from '../map/theme';
 import type { Network } from '../types';
@@ -32,7 +33,8 @@ export function mapScreen(net: Network, onBack: () => void): { el: HTMLElement; 
       h('span')),
     h('div', { class: 'maprow' }, wrap),
     h('div', { class: 'floating-search' }, stationSearch(net, (i) => { select(i); map.focusStation(i); })),
-    label);
+    label,
+    geometryOf(net) ? h('p', { class: 'attribution' }, '国土数値情報（国土交通省）を加工して作成') : null);
   const t = themeAt(720);
   el.style.setProperty('--bg', t.bg);
   el.style.setProperty('--fg', t.text);

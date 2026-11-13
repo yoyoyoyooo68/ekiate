@@ -1,8 +1,8 @@
-import type { Network } from '../types';
+import type { Geometry, Network } from '../types';
 import { decryptBytes } from './crypto';
 
-export type Manifest = { version: string; encrypted: boolean };
-export type LoadedData = { network: Network; timetable: ArrayBuffer };
+export type Manifest = { version: string; encrypted: boolean; geometry?: boolean };
+export type LoadedData = { network: Network; timetable: ArrayBuffer; geometry: Geometry | null };
 
 async function fetchBytes(url: string, onProgress?: (frac: number) => void): Promise<Uint8Array> {
   const res = await fetch(url);
@@ -58,5 +58,15 @@ export async function loadData(
   }
   const network = JSON.parse(new TextDecoder().decode(net)) as Network;
   const timetable = tt.buffer.slice(tt.byteOffset, tt.byteOffset + tt.byteLength) as ArrayBuffer;
-  return { network, timetable };
+  // 線の形（公開データなので暗号化しない。無い・読めないときは駅を直線で結ぶ）
+  let geometry: Geometry | null = null;
+  if (manifest.geometry) {
+    try {
+      const res = await fetch('data/geometry.json');
+      if (res.ok) geometry = (await res.json()) as Geometry;
+    } catch {
+      geometry = null;
+    }
+  }
+  return { network, timetable, geometry };
 }

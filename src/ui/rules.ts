@@ -45,7 +45,7 @@ const SLIDES: { title: string; body: string; fig: string }[] = [
 ];
 
 /** ルール説明のスライド。onClose で閉じる。 */
-export function rulesSlides(estimate: 'all' | 'some' | null, onClose: () => void): HTMLElement {
+export function rulesSlides(estimate: 'all' | 'some' | null, geoSource: string | null, onClose: () => void): HTMLElement {
   let i = 0;
   const fig = h('div', { class: 'slide-fig' });
   const title = h('h2');
@@ -58,7 +58,8 @@ export function rulesSlides(estimate: 'all' | 'some' | null, onClose: () => void
     const s = SLIDES[i];
     fig.innerHTML = s.fig;
     title.textContent = `${i + 1}. ${s.title}`;
-    body.textContent = estimate && i === SLIDES.length - 1 ? `${s.body}\n${ESTIMATE_RULE[estimate]}` : s.body;
+    const last = i === SLIDES.length - 1;
+    body.textContent = [s.body, last && estimate ? ESTIMATE_RULE[estimate] : '', last && geoSource ? '路線の形は国土数値情報（国土交通省）を加工して作成しています。引いた状態の都心は線が重なるので、拡大して見てください。' : ''].filter(Boolean).join('\n');
     dots.textContent = SLIDES.map((_, k) => (k === i ? '●' : '○')).join(' ');
     prev.disabled = i === 0;
     next.textContent = i === SLIDES.length - 1 ? '閉じる' : '次へ';

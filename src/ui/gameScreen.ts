@@ -1,5 +1,6 @@
 import type { Move } from '../game/game';
 import { saveSession, shareText, type Session } from '../game/session';
+import { geometryOf } from '../map/geometry';
 import { MapView } from '../map/MapView';
 import { themeAt } from '../map/theme';
 import type { Leg } from '../routing/csa';
@@ -83,7 +84,7 @@ export function gameScreen(o: GameScreenOptions): { el: HTMLElement; destroy: ()
   });
 
   function showRules() {
-    overlay.replaceChildren(rulesSlides(estimateLevel(net), () => closeOverlay()));
+    overlay.replaceChildren(rulesSlides(estimateLevel(net), geometryOf(net)?.source ?? null, () => closeOverlay()));
     overlay.classList.remove('hidden');
   }
   function confirmGiveUp() {

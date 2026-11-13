@@ -16,6 +16,7 @@
     "build:beta": "npm run data:beta && tsc --noEmit && vite build",
     "csv:pack": "tsx scripts/csv-pack.ts pack",
     "csv:unpack": "tsx scripts/csv-pack.ts unpack",
+    "data:geometry": "tsx scripts/build-geometry.ts",
     "check:route": "tsx scripts/check-route.ts"
   },
   "devDependencies": {

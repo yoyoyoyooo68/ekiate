@@ -34,3 +34,24 @@ export type Timetable = {
   arr: Uint16Array;
   trip: Uint32Array;
 };
+
+/** 線の形と背景（geometry.json。設計図 4.1b）。座標は [経度, 緯度] */
+export type Geometry = {
+  source: string;
+  /** 作ったときのネットワークとの対応確認用（駅数・路線数） */
+  stations: number;
+  lines: number;
+  /** 表示する駅の位置（線の上に寄せたもの）。駅 index 順 */
+  stationPos: [number, number][];
+  shapes: {
+    line: number; // Network.lines の index
+    segments: {
+      from: number;
+      to: number;
+      offset: number; // 並走時のずらし量（線何本分か。進行方向の左が正）
+      pts: [number, number][]; // 引いた状態用（粗い）
+      ptsDetail?: [number, number][]; // 拡大時用（細かい）
+    }[];
+  }[];
+  background: { coast: [number, number][][]; rivers: [number, number][][]; borders: [number, number][][] };
+};

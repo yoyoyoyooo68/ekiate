@@ -1,6 +1,6 @@
 // β 版のデータ作成: 駅データ.jp の CSV → public/data/{network.json,timetable.bin,manifest.json}
 //   npm run data:beta            （CSV は data/ekidata/ か、環境変数 EKIDATA_DIR）
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { encodeTimetable } from '../src/data/timetable';
@@ -27,7 +27,19 @@ const out = resolve(root, 'public/data');
 mkdirSync(out, { recursive: true });
 writeFileSync(resolve(out, 'network.json'), JSON.stringify(network));
 writeFileSync(resolve(out, 'timetable.bin'), Buffer.from(encodeTimetable(timetable)));
-writeFileSync(resolve(out, 'manifest.json'), JSON.stringify({ version: network.version, encrypted: false, estimated: true }));
+// 線の形（data/geometry.json は npm run data:geometry で作ってコミットしたもの。駅・路線の数が合うときだけ使う）
+const geoPath = resolve(root, 'data/geometry.json');
+const geoOut = resolve(out, 'geometry.json');
+let geometry = false;
+if (existsSync(geoPath)) {
+  const g = JSON.parse(readFileSync(geoPath, 'utf8'));
+  if (g.stations === network.stations.length && g.lines === network.lines.length) {
+    writeFileSync(geoOut, JSON.stringify(g));
+    geometry = true;
+  } else console.warn('警告: data/geometry.json が今のネットワークと合いません（駅・路線の数が違う）。npm run data:geometry で作り直してください。路線は直線で描きます。');
+}
+if (!geometry) rmSync(geoOut, { force: true });
+writeFileSync(resolve(out, 'manifest.json'), JSON.stringify({ version: network.version, encrypted: false, estimated: true, geometry }));
 
 for (const w of warnings) console.warn(`警告: ${w}`);
 const kinds: Record<string, number> = {};

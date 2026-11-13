@@ -6,6 +6,7 @@ import { createSearcher, type Searcher } from '../routing/searcher';
 import type { Network } from '../types';
 import { h } from './dom';
 import { gameScreen } from './gameScreen';
+import { attachGeometry, geometryOf } from '../map/geometry';
 import { mapScreen } from './mapScreen';
 import { rulesSlides } from './rules';
 import { ESTIMATE_BADGE, estimateLevel } from '../data/estimate';
@@ -95,6 +96,7 @@ export class App {
 
   private ready(data: LoadedData) {
     this.net = data.network;
+    attachGeometry(data.network, data.geometry);
     this.searcher = createSearcher(data.timetable, this.net);
     const params = new URLSearchParams(location.search);
     const seed = params.get('seed');
@@ -142,7 +144,7 @@ export class App {
     this.show(s.el, s.destroy);
   }
   private openRules() {
-    this.show(rulesSlides(estimateLevel(this.net), () => {
+    this.show(rulesSlides(estimateLevel(this.net), geometryOf(this.net)?.source ?? null, () => {
       store.set(RULES_KEY, '1');
       void this.menu();
     }));

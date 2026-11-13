@@ -1,6 +1,6 @@
 import { INF, type Leg } from '../routing/csa';
 import type { Network } from '../types';
-import { schematicLayout } from './layout';
+import { geometryOf, MapGeometry, type Poly, type Seg } from './geometry';
 import { themeAt } from './theme';
 
 type Pt = { x: number; y: number };
@@ -27,6 +27,7 @@ export class MapView {
   readonly canvas = document.createElement('canvas');
   private ctx = this.canvas.getContext('2d')!;
   private world: Pt[];
+  private geo: MapGeometry;
   private cam = { x: 0, y: 0, scale: 1 };
   private target: { x: number; y: number; scale: number } | null = null;
   private fitScale = 1;
@@ -73,7 +74,8 @@ export class MapView {
     this.labels = opts.labels;
     container.appendChild(this.canvas);
     this.canvas.className = 'map-canvas';
-    this.world = schematicLayout(net);
+    this.geo = new MapGeometry(net, geometryOf(net));
+    this.world = this.geo.world;
     this.labelAlways = net.stations.length < 100;
     this.lineOf = new Map();
     net.lines.forEach((l, li) => l.stations.forEach((s) => this.lineOf.set(`${li}:${s}`, 1)));
@@ -326,20 +328,28 @@ export class MapView {
   private hitLine(p: Pt): number | null {
     let best = -1;
     let bd = 9;
-    this.net.lines.forEach((l, li) => {
-      const n = l.stations.length;
-      const segs = l.loop ? n : n - 1;
-      for (let k = 0; k < segs; k++) {
-        const a = this.toScreen(l.stations[k]);
-        const b = this.toScreen(l.stations[(k + 1) % n]);
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const len2 = dx * dx + dy * dy || 1;
-        const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
-        const d = Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
-        if (d < bd) {
-          bd = d;
-          best = li;
+    const m = 12 / this.cam.scale;
+    const wx = (p.x - this.w / 2) / this.cam.scale + this.cam.x;
+    const wy = (p.y - this.h / 2) / this.cam.scale + this.cam.y;
+    this.geo.lineSegs.forEach((segs, li) => {
+      for (const sg of segs) {
+        const b = sg.bbox;
+        if (wx < b[0] - m || wx > b[2] + m || wy < b[1] - m || wy > b[3] + m) continue;
+        const a = sg.pts;
+        for (let k = 0; k + 3 < a.length; k += 2) {
+          const ax = (a[k] - this.cam.x) * this.cam.scale + this.w / 2;
+          const ay = (a[k + 1] - this.cam.y) * this.cam.scale + this.h / 2;
+          const bx = (a[k + 2] - this.cam.x) * this.cam.scale + this.w / 2;
+          const by = (a[k + 3] - this.cam.y) * this.cam.scale + this.h / 2;
+          const dx = bx - ax;
+          const dy = by - ay;
+          const len2 = dx * dx + dy * dy || 1;
+          const t = Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2));
+          const d = Math.hypot(p.x - (ax + dx * t), p.y - (ay + dy * t));
+          if (d < bd) {
+            bd = d;
+            best = li;
+          }
         }
       }
     });
@@ -389,14 +399,18 @@ export class MapView {
     const scr = this.world.map((p) => this.sp(p));
     const z = this.cam.scale / this.fitScale;
 
-    // 路線
+    this.drawBackground(th);
+
+    // 路線（並走する線は画面上で平行にずらす）
+    const gap = lw + 0.6;
+    const detail = this.cam.scale > 12;
     this.net.lines.forEach((l, li) => {
-      if (l.stations.length < 2) return;
+      const segs = this.geo.lineSegs[li];
+      if (!segs.length) return;
       const on = this.lineHighlight < 0 || this.lineHighlight === li;
       ctx.globalAlpha = on ? 1 : 0.15;
       ctx.beginPath();
-      l.stations.forEach((s, k) => (k ? ctx.lineTo(scr[s].x, scr[s].y) : ctx.moveTo(scr[s].x, scr[s].y)));
-      if (l.loop) ctx.closePath();
+      for (const sg of segs) if (this.visible(sg.bbox)) this.trace(sg, false, sg.offset * gap, detail);
       ctx.strokeStyle = l.color;
       ctx.lineWidth = (on && this.lineHighlight >= 0) || this.hoverLine === li ? lw + 2 : lw;
       ctx.shadowColor = l.color;
@@ -422,7 +436,7 @@ export class MapView {
     this.drawPath(scr, lw);
 
     // 駅
-    const r = Math.min(9, Math.max(2.6, 2.8 * Math.sqrt(z)));
+    const r = Math.min(9, Math.max(1.7, 1.4 * Math.sqrt(z) + 0.4)); // 引いた状態では小さく（線を読めるように）
     const pulse = (Math.sin(performance.now() / 280) + 1) / 2;
     const dimmed = (i: number) =>
       (this.dimUnreachable && this.reach !== null && i !== this.current && this.reach[i] >= INF) || !this.onLine(i);
@@ -435,7 +449,7 @@ export class MapView {
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.fillStyle = th.stationFill;
       ctx.fill();
-      ctx.lineWidth = 2;
+      ctx.lineWidth = r < 3.5 ? 1 : 2;
       ctx.strokeStyle = dim ? '#888' : th.stationStroke;
       ctx.stroke();
       if (this.visited.has(i)) {
@@ -520,6 +534,83 @@ export class MapView {
     ctx.textAlign = 'start';
   }
 
+  private visible(b: [number, number, number, number]): boolean {
+    const m = 24 / this.cam.scale;
+    const { x, y, scale } = this.cam;
+    return (
+      b[2] + m >= x - this.w / 2 / scale && b[0] - m <= x + this.w / 2 / scale &&
+      b[3] + m >= y - this.h / 2 / scale && b[1] - m <= y + this.h / 2 / scale
+    );
+  }
+
+  /** 区間の形を画面座標にして返す（offPx: 進行方向の左へのずらし量 px） */
+  private screenPts(sg: Seg, reversed: boolean, offPx: number, detail: boolean): Pt[] {
+    const a = detail && sg.detail ? sg.detail : sg.pts;
+    const n = a.length / 2;
+    const { scale } = this.cam;
+    const ox = this.w / 2 - this.cam.x * scale;
+    const oy = this.h / 2 - this.cam.y * scale;
+    const out: Pt[] = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const j = reversed ? n - 1 - i : i;
+      out[i] = { x: a[2 * j] * scale + ox, y: a[2 * j + 1] * scale + oy };
+    }
+    if (offPx !== 0 && n >= 2) {
+      const off = reversed ? -offPx : offPx;
+      const nrm: Pt[] = [];
+      for (let i = 0; i + 1 < n; i++) {
+        const dx = out[i + 1].x - out[i].x;
+        const dy = out[i + 1].y - out[i].y;
+        const l = Math.hypot(dx, dy) || 1;
+        nrm.push({ x: dy / l, y: -dx / l }); // 左向きの法線（画面は y が下）
+      }
+      const moved = out.map((p, i) => {
+        const n0 = nrm[Math.max(0, i - 1)];
+        const n1 = nrm[Math.min(nrm.length - 1, i)];
+        let mx = n0.x + n1.x;
+        let my = n0.y + n1.y;
+        const ml = Math.hypot(mx, my) || 1;
+        mx /= ml;
+        my /= ml;
+        const cos = Math.max(0.5, mx * n1.x + my * n1.y); // 急なカーブで外へ飛ばないように
+        return { x: p.x + (mx * off) / cos, y: p.y + (my * off) / cos };
+      });
+      return moved;
+    }
+    return out;
+  }
+
+  private trace(sg: Seg, reversed: boolean, offPx: number, detail: boolean) {
+    const pts = this.screenPts(sg, reversed, offPx, detail);
+    pts.forEach((p, i) => (i ? this.ctx.lineTo(p.x, p.y) : this.ctx.moveTo(p.x, p.y)));
+  }
+
+  private drawBackground(th: ReturnType<typeof themeAt>) {
+    const { ctx } = this;
+    const sk = (list: Poly[], color: string, width: number, dash: number[]) => {
+      if (!list.length) return;
+      ctx.beginPath();
+      for (const pl of list) {
+        if (!this.visible(pl.bbox)) continue;
+        const a = pl.pts;
+        for (let i = 0; i < a.length; i += 2) {
+          const x = (a[i] - this.cam.x) * this.cam.scale + this.w / 2;
+          const y = (a[i + 1] - this.cam.y) * this.cam.scale + this.h / 2;
+          if (i) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        }
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    sk(this.geo.borders, th.geoBorder, 1, [5, 4]);
+    sk(this.geo.rivers, th.geoRiver, 2, []);
+    sk(this.geo.coast, th.geoCoast, 1.5, []);
+  }
+
   private drawLabels(scr: Pt[], r: number, z: number, th: ReturnType<typeof themeAt>, dimmed: (i: number) => boolean) {
     const { ctx } = this;
     ctx.font = '600 12px system-ui, sans-serif';
@@ -569,32 +660,38 @@ export class MapView {
     }
   }
 
-  private legColor(l: Leg): string {
+  private legLine(l: Leg): number {
     for (let li = 0; li < this.net.lines.length; li++) {
-      if (this.lineOf.has(`${li}:${l.from}`) && this.lineOf.has(`${li}:${l.to}`)) return this.net.lines[li].color;
+      if (this.lineOf.has(`${li}:${l.from}`) && this.lineOf.has(`${li}:${l.to}`)) return li;
     }
-    return ACCENT;
+    return -1;
   }
 
   private drawPath(scr: Pt[], lw: number) {
     const legs = this.anim?.legs ?? this.highlight;
     if (!legs || !legs.length) return;
-    type Seg = { a: Pt; b: Pt; color: string; dotted: boolean; len: number };
-    const segs: Seg[] = [];
+    type Piece = { pts: Pt[]; color: string; dotted: boolean; len: number };
+    const pieces: Piece[] = [];
+    const push = (pts: Pt[], color: string, dotted: boolean) => {
+      let len = 0;
+      for (let i = 0; i + 1 < pts.length; i++) len += Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+      pieces.push({ pts, color, dotted, len });
+    };
+    const gap = lw + 0.6;
+    const detail = this.cam.scale > 12;
     legs.forEach((l, li) => {
-      const color = this.legColor(l);
-      if (li > 0) {
-        const a = scr[legs[li - 1].to];
-        const b = scr[l.from];
-        if (legs[li - 1].to !== l.from) segs.push({ a, b, color: ACCENT, dotted: true, len: Math.hypot(a.x - b.x, a.y - b.y) });
-      }
+      const line = this.legLine(l);
+      const color = line >= 0 ? this.net.lines[line].color : ACCENT;
+      if (li > 0 && legs[li - 1].to !== l.from) push([scr[legs[li - 1].to], scr[l.from]], ACCENT, true);
       for (let k = 0; k + 1 < l.stops.length; k++) {
-        const a = scr[l.stops[k]];
-        const b = scr[l.stops[k + 1]];
-        segs.push({ a, b, color, dotted: false, len: Math.hypot(a.x - b.x, a.y - b.y) });
+        const a = l.stops[k];
+        const b = l.stops[k + 1];
+        const hit = this.geo.between(a, b, line);
+        if (hit) push(this.screenPts(hit.seg, hit.reversed, hit.seg.offset * gap, detail), color, false);
+        else push([scr[a], scr[b]], color, false);
       }
     });
-    const total = segs.reduce((s, x) => s + x.len, 0) || 1;
+    const total = pieces.reduce((s, x) => s + x.len, 0) || 1;
     let remain = total;
     let finished: (() => void) | null = null;
     if (this.anim) {
@@ -610,16 +707,23 @@ export class MapView {
     const { ctx } = this;
     for (const pass of [0, 1]) {
       let left = remain;
-      for (const s of segs) {
+      for (const pc of pieces) {
         if (left <= 0) break;
-        const f = Math.min(1, left / (s.len || 1));
-        left -= s.len;
         ctx.beginPath();
-        ctx.moveTo(s.a.x, s.a.y);
-        ctx.lineTo(s.a.x + (s.b.x - s.a.x) * f, s.a.y + (s.b.y - s.a.y) * f);
-        ctx.setLineDash(s.dotted ? [3, 4] : []);
+        ctx.moveTo(pc.pts[0].x, pc.pts[0].y);
+        let budget = left;
+        for (let i = 0; i + 1 < pc.pts.length && budget > 0; i++) {
+          const a = pc.pts[i];
+          const b = pc.pts[i + 1];
+          const d = Math.hypot(b.x - a.x, b.y - a.y);
+          const f = d === 0 ? 1 : Math.min(1, budget / d);
+          ctx.lineTo(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f);
+          budget -= d;
+        }
+        left -= pc.len;
+        ctx.setLineDash(pc.dotted ? [3, 4] : []);
         ctx.lineWidth = pass === 0 ? lw + 6 : lw + 1;
-        ctx.strokeStyle = pass === 0 ? 'rgba(255,255,255,0.9)' : s.color;
+        ctx.strokeStyle = pass === 0 ? 'rgba(255,255,255,0.9)' : pc.color;
         ctx.stroke();
       }
     }

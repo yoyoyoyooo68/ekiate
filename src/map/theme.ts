@@ -18,6 +18,9 @@ export type Theme = {
   border: string;
   stationFill: string;
   stationStroke: string;
+  geoCoast: string;
+  geoRiver: string;
+  geoBorder: string;
   glow: number; // 0..1 夜の発光
   night: number; // 0..1
 };
@@ -48,6 +51,9 @@ export function themeAt(minute: number): Theme {
     border: css(mix([0, 0, 0], [255, 255, 255], night), 0.14),
     stationFill: css(mix([255, 255, 255], [29, 36, 72], night)),
     stationStroke: css(mix([60, 66, 80], [170, 180, 255], night)),
+    geoCoast: css(mix([150, 170, 195], [90, 105, 160], night), 0.8),
+    geoRiver: css(mix([190, 214, 236], [60, 80, 140], night), 0.8),
+    geoBorder: css(mix([205, 205, 215], [90, 95, 140], night), 0.7),
     glow: night,
     night,
   };
