@@ -1,6 +1,6 @@
 {
   "_comment": "概算ダイヤの路線ごとの上書き。キーは路線名（駅データ.jp の line_name）か line_cd。kind / speed / first / last / headway を書ける。exclude に入れた路線は収録しない（新幹線は自動で除く）。 companies は会社ごとの上書き（路線の上書きが優先）。",
-  "exclude": [],
+  "exclude": ["JR成田エクスプレス", "JR成田エクスプレス（新宿〜品川）"],
   "lines": {
     "JR山手線": {
       "kind": "jrCore",

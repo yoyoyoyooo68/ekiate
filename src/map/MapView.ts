@@ -46,6 +46,8 @@ export class MapView {
   private sized = false;
   private onReady: (() => void)[] = [];
   private hover = -1;
+  private hoverLine = -1;
+  private hoverPt: Pt = { x: 0, y: 0 };
 
   labels: LabelMode;
   time = 720;
@@ -81,8 +83,9 @@ export class MapView {
     this.canvas.addEventListener('pointerup', this.onUp);
     this.canvas.addEventListener('pointercancel', this.onUp);
     this.canvas.addEventListener('pointerleave', () => {
-      if (this.hover >= 0) {
+      if (this.hover >= 0 || this.hoverLine >= 0) {
         this.hover = -1;
+        this.hoverLine = -1;
         this.dirty = true;
       }
     });
@@ -244,10 +247,18 @@ export class MapView {
     const prev = this.pointers.get(e.pointerId);
     if (!prev) {
       // マウスを乗せただけ（押していない）
-      if (e.pointerType === 'mouse' && this.labels === 'none') {
-        const hv = this.hit(this.pos(e)) ?? -1;
+      if (e.pointerType === 'mouse') {
+        const p = this.pos(e);
+        const hv = this.labels === 'none' ? (this.hit(p) ?? -1) : -1;
         if (hv !== this.hover) {
           this.hover = hv;
+          this.dirty = true;
+        }
+        // 駅の上でなければ、線の上にある路線名を出す
+        const hl = this.hit(p, 8) === null ? (this.hitLine(p) ?? -1) : -1;
+        if (hl !== this.hoverLine || hl >= 0) {
+          this.hoverLine = hl;
+          this.hoverPt = p;
           this.dirty = true;
         }
       }
@@ -299,9 +310,9 @@ export class MapView {
     const r = this.canvas.getBoundingClientRect();
     this.zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015));
   };
-  private hit(p: Pt): number | null {
+  private hit(p: Pt, radius = 16): number | null {
     let best = -1;
-    let bd = 16;
+    let bd = radius;
     for (let i = 0; i < this.world.length; i++) {
       const s = this.toScreen(i);
       const d = Math.hypot(s.x - p.x, s.y - p.y);
@@ -359,7 +370,7 @@ export class MapView {
 
   private lineWidth(): number {
     const z = this.cam.scale / this.fitScale;
-    return Math.min(8, Math.max(2, 2.2 * Math.sqrt(z)));
+    return Math.min(8, Math.max(1.6, 1.8 * Math.sqrt(z)));
   }
 
   private onLine(i: number): boolean {
@@ -387,7 +398,7 @@ export class MapView {
       l.stations.forEach((s, k) => (k ? ctx.lineTo(scr[s].x, scr[s].y) : ctx.moveTo(scr[s].x, scr[s].y)));
       if (l.loop) ctx.closePath();
       ctx.strokeStyle = l.color;
-      ctx.lineWidth = on && this.lineHighlight >= 0 ? lw + 2 : lw;
+      ctx.lineWidth = (on && this.lineHighlight >= 0) || this.hoverLine === li ? lw + 2 : lw;
       ctx.shadowColor = l.color;
       ctx.shadowBlur = th.glow * 10;
       ctx.stroke();
@@ -411,7 +422,7 @@ export class MapView {
     this.drawPath(scr, lw);
 
     // 駅
-    const r = Math.min(9, Math.max(3.5, 3.8 * Math.sqrt(z)));
+    const r = Math.min(9, Math.max(2.6, 2.8 * Math.sqrt(z)));
     const pulse = (Math.sin(performance.now() / 280) + 1) / 2;
     const dimmed = (i: number) =>
       (this.dimUnreachable && this.reach !== null && i !== this.current && this.reach[i] >= INF) || !this.onLine(i);
@@ -465,6 +476,23 @@ export class MapView {
     }
 
     this.drawLabels(scr, r, z, th, dimmed);
+    if (this.hoverLine >= 0) {
+      const l = this.net.lines[this.hoverLine];
+      ctx.font = '700 13px system-ui, sans-serif';
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'middle';
+      const w = ctx.measureText(l.name).width + 28;
+      const x = Math.min(Math.max(4, this.hoverPt.x + 14), this.w - w - 4);
+      const y = Math.max(22, this.hoverPt.y - 22);
+      ctx.fillStyle = '#14213d';
+      ctx.beginPath();
+      ctx.roundRect(x, y - 13, w, 26, 5);
+      ctx.fill();
+      ctx.fillStyle = l.color;
+      ctx.fillRect(x + 8, y - 6, 6, 12);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(l.name, x + 20, y);
+    }
 
     // 手の番号・正解の星
     ctx.font = '700 11px ui-monospace, Menlo, monospace';
