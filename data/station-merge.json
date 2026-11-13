@@ -1,0 +1,6 @@
+{
+  "_comment": "同名駅のまとめ方の手直し（設計図 1.5）。駅データ.jp は station_g_cd が同じ駅をまとめる。さらに『同じ名前で 0.4km 以内』も自動でまとめる。merge: 強制的にまとめる station_g_cd の組。split: 自動のまとめから外す station_g_cd（その駅は単独の駅になる）。rename: station_g_cd → 表示名。",
+  "merge": [],
+  "split": [],
+  "rename": {}
+}

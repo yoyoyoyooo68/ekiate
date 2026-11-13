@@ -19,7 +19,7 @@ export function mapScreen(net: Network, onBack: () => void): { el: HTMLElement; 
     map.lineHighlight = li ?? -1;
     map.invalidate();
     if (li === null) show(null);
-    else show(`${net.lines[li].name}（${net.lines[li].company}）`);
+    else show(`${net.lines[li].name}（${net.lines[li].company}）${net.lines[li].timeSource === 'estimated' ? '　時刻は概算' : ''}`);
   };
   const show = (t: string | null) => {
     label.textContent = t ?? '';

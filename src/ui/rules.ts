@@ -1,3 +1,4 @@
+import { ESTIMATE_RULE } from '../data/estimate';
 import { h } from './dom';
 
 // 各スライドの小さな図（SVG）
@@ -44,7 +45,7 @@ const SLIDES: { title: string; body: string; fig: string }[] = [
 ];
 
 /** ルール説明のスライド。onClose で閉じる。 */
-export function rulesSlides(onClose: () => void): HTMLElement {
+export function rulesSlides(estimate: 'all' | 'some' | null, onClose: () => void): HTMLElement {
   let i = 0;
   const fig = h('div', { class: 'slide-fig' });
   const title = h('h2');
@@ -57,7 +58,7 @@ export function rulesSlides(onClose: () => void): HTMLElement {
     const s = SLIDES[i];
     fig.innerHTML = s.fig;
     title.textContent = `${i + 1}. ${s.title}`;
-    body.textContent = s.body;
+    body.textContent = estimate && i === SLIDES.length - 1 ? `${s.body}\n${ESTIMATE_RULE[estimate]}` : s.body;
     dots.textContent = SLIDES.map((_, k) => (k === i ? '●' : '○')).join(' ');
     prev.disabled = i === 0;
     next.textContent = i === SLIDES.length - 1 ? '閉じる' : '次へ';

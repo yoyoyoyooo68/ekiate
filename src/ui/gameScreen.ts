@@ -5,6 +5,7 @@ import { themeAt } from '../map/theme';
 import type { Leg } from '../routing/csa';
 import type { Network } from '../types';
 import { fmt, LATE } from '../util/time';
+import { ESTIMATE_BADGE, estimateLevel } from '../data/estimate';
 import { h } from './dom';
 import { rulesSlides } from './rules';
 import { stationSearch } from './search';
@@ -55,7 +56,7 @@ export function gameScreen(o: GameScreenOptions): { el: HTMLElement; destroy: ()
   const el = h('div', { class: 'screen game' },
     h('header', { class: 'topbar' },
       h('button', { type: 'button', class: 'btn', 'aria-label': 'メニュー', onclick: () => menuPop.classList.toggle('hidden') }, '≡'),
-      h('div', { class: 'clock-wrap' }, clock, sub, warn),
+      h('div', { class: 'clock-wrap' }, clock, sub, warn, estimateLevel(net) ? h('div', { class: 'beta small' }, ESTIMATE_BADGE[estimateLevel(net)!]) : null),
       h('div', { class: 'topright' }, resultBtn, panelBtn)),
     menuPop,
     banner,
@@ -82,7 +83,7 @@ export function gameScreen(o: GameScreenOptions): { el: HTMLElement; destroy: ()
   });
 
   function showRules() {
-    overlay.replaceChildren(rulesSlides(() => closeOverlay()));
+    overlay.replaceChildren(rulesSlides(estimateLevel(net), () => closeOverlay()));
     overlay.classList.remove('hidden');
   }
   function confirmGiveUp() {

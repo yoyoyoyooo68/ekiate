@@ -15,6 +15,7 @@ export type Line = {
   color: string;
   stations: number[]; // 駅の並び（線を引く順）
   loop?: boolean; // 環状線（最後の駅と最初の駅をつなぐ）
+  timeSource: 'odpt' | 'estimated'; // 時刻が本物か概算か
 };
 
 export type Network = {

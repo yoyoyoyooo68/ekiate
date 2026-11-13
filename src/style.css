@@ -108,7 +108,7 @@ body { background: #f2f3f6; color: var(--navy); overscroll-behavior: none; }
 
 .slides { text-align: center; align-items: center; }
 .slides .slide-fig { background: #f2f3f6; border-radius: 6px; padding: 8px; }
-.slide-body { margin: 0; line-height: 1.6; }
+.slide-body { margin: 0; line-height: 1.6; white-space: pre-line; }
 .slide-dots { letter-spacing: 4px; color: #888; }
 .slides .row { width: 100%; }
 
@@ -122,3 +122,6 @@ body { background: #f2f3f6; color: var(--navy); overscroll-behavior: none; }
   .hint-main { font-size: 16px; }
   .result-map { height: 220px; }
 }
+
+.beta { display: inline-block; margin-left: 8px; padding: 1px 7px; border: 1px solid currentColor; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: middle; opacity: 0.75; letter-spacing: 0.04em; }
+.beta.small { display: block; margin: 2px auto 0; width: fit-content; font-size: 10px; }

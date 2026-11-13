@@ -11,10 +11,17 @@
     "test": "vitest run",
     "data:dummy": "tsx scripts/build-dummy.ts",
     "encrypt": "tsx scripts/encrypt.ts",
-    "predev": "npm run data:dummy"
+    "predev": "npm run data:dummy",
+    "data:beta": "tsx scripts/build-data.ts",
+    "build:beta": "npm run data:beta && tsc --noEmit && vite build",
+    "csv:pack": "tsx scripts/csv-pack.ts pack",
+    "csv:unpack": "tsx scripts/csv-pack.ts unpack",
+    "check:route": "tsx scripts/check-route.ts"
   },
   "devDependencies": {
+    "@types/kuromoji": "^0.1.3",
     "@types/node": "^22.20.5",
+    "kuromoji": "^0.1.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^6.4.6",

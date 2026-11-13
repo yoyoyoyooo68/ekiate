@@ -105,7 +105,7 @@ export function buildDummy(): { network: Network; timetable: Timetable } {
   const lines: Line[] = LINES.map((l, li) => {
     const ids = l.stops.map(idx);
     for (const i of ids) stations[i].lines.push(li);
-    return { name: l.name, company: l.company, color: l.color, stations: ids, loop: l.loop };
+    return { name: l.name, company: l.company, color: l.color, stations: ids, loop: l.loop, timeSource: 'estimated' };
   });
 
   type Conn = { d: number; a: number; dep: number; arr: number; trip: number };

@@ -27,8 +27,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      # 現状はダミーデータ。ODPT 承認後は fetch / build-data の処理をここに足す。
-      - run: npm run build
+      # β 版: 暗号化して置いた駅データ.jp の CSV を戻し、概算ダイヤを作る。
+      # CSV（data/ekidata.enc）が無いときはダミーデータで公開する。ODPT 承認後は fetch / map の処理をここに足す。
+      - name: データ作成
+        run: |
+          if [ -f data/ekidata.enc ]; then
+            npm run csv:unpack
+            npm run build:beta
+          else
+            npm run build
+          fi
+        env:
+          PASSPHRASE: ${{ secrets.PASSPHRASE }}
       - name: 合言葉でデータを暗号化
         run: npm run encrypt
         env:

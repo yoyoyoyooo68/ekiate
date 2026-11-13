@@ -8,6 +8,7 @@ import { h } from './dom';
 import { gameScreen } from './gameScreen';
 import { mapScreen } from './mapScreen';
 import { rulesSlides } from './rules';
+import { ESTIMATE_BADGE, estimateLevel } from '../data/estimate';
 
 const PASS_KEY = 'ekiate:pass';
 const RULES_KEY = 'ekiate:rulesSeen';
@@ -113,10 +114,11 @@ export class App {
     const daily = await loadSession(net, this.searcher, 'daily', today);
     const dailyStatus = !daily ? '未プレイ' : daily.game.status === 'playing' ? 'プレイ中' : daily.game.status === 'won' ? `クリア（${daily.game.moves.length}手）` : '終電';
     const current = await loadSession(net, this.searcher, 'seed', '');
+    const est = estimateLevel(net);
     const seedInput = h('input', { class: 'search-input', placeholder: 'シード（好きな文字・数字）' });
     const el = h('div', { class: 'screen center' },
       h('div', { class: 'card menu' },
-        h('h1', null, '駅当て'),
+        h('h1', null, '駅当て', est ? h('span', { class: 'beta' }, ESTIMATE_BADGE[est]) : null),
         h('p', { class: 'muted' }, '路線図の上で「正解の駅」を推理するゲーム'),
         h('h3', null, 'ゲーム'),
         h('button', { type: 'button', class: 'btn primary big', onclick: () => this.play('daily', today) }, `今日の問題（${today}）　${dailyStatus}`),
@@ -130,7 +132,8 @@ export class App {
           h('button', { type: 'button', class: 'btn big', onclick: () => this.openRules() }, 'ルール説明')),
         h('p', { class: 'credit' }, `データ版 ${net.version}`),
         store.get(PASS_KEY) ? h('button', { type: 'button', class: 'link', onclick: () => { store.del(PASS_KEY); location.reload(); } }, '合言葉を入力しなおす') : null,
-        h('p', { class: 'credit' }, '公共交通オープンデータセンターのデータを利用（実データ収録時）')));
+        h('p', { class: 'credit' }, net.lines.some((l) => l.timeSource === 'odpt') ? '公共交通オープンデータセンターのデータを利用' : ''),
+        h('p', { class: 'credit' }, '駅・路線データ: 駅データ.jp')));
     this.show(el);
   }
 
@@ -139,7 +142,7 @@ export class App {
     this.show(s.el, s.destroy);
   }
   private openRules() {
-    this.show(rulesSlides(() => {
+    this.show(rulesSlides(estimateLevel(this.net), () => {
       store.set(RULES_KEY, '1');
       void this.menu();
     }));

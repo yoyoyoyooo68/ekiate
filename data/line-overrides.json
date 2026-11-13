@@ -1,0 +1,50 @@
+{
+  "_comment": "概算ダイヤの路線ごとの上書き。キーは路線名（駅データ.jp の line_name）か line_cd。kind / speed / first / last / headway を書ける。exclude に入れた路線は収録しない（新幹線は自動で除く）。 companies は会社ごとの上書き（路線の上書きが優先）。",
+  "exclude": [],
+  "lines": {
+    "JR山手線": {
+      "kind": "jrCore",
+      "speed": 36,
+      "headway": {
+        "early": 6,
+        "peak": 2,
+        "day": 4,
+        "evening": 4,
+        "late": 8
+      },
+      "last": 1500
+    }
+  },
+  "companies": {
+    "小田急電鉄": {
+      "speed": 95
+    },
+    "京成電鉄": {
+      "speed": 90
+    },
+    "京急電鉄": {
+      "speed": 85
+    },
+    "東武鉄道": {
+      "speed": 85
+    },
+    "西武鉄道": {
+      "speed": 85
+    },
+    "京王電鉄": {
+      "speed": 80
+    },
+    "東急電鉄": {
+      "speed": 65
+    },
+    "首都圏新都市鉄道": {
+      "speed": 90
+    },
+    "東葉高速鉄道": {
+      "speed": 85
+    },
+    "北総鉄道": {
+      "speed": 85
+    }
+  }
+}

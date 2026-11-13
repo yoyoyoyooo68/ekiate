@@ -1,0 +1,19 @@
+{
+  "version": "β1",
+  "_comment": "概算ダイヤの既定値（設計図 2.5.3 / 2.5.4）。時刻は 0:00 からの分。first=始発（起点発）、last=終電（終点着）。headway は時間帯別の運転間隔（分）: early=〜7:00, peak=7:00〜9:00, day=9:00〜20:00, evening=20:00〜23:00, late=23:00〜",
+  "stopMinutes": 0.5,
+  "kinds": {
+    "subway": { "speed": 30, "first": 300, "last": 1470, "headway": { "early": 10, "peak": 3, "day": 5, "evening": 6, "late": 10 } },
+    "jrCore": { "speed": 50, "first": 280, "last": 1490, "headway": { "early": 8, "peak": 3, "day": 5, "evening": 5, "late": 10 } },
+    "suburban": { "speed": 72, "first": 300, "last": 1470, "headway": { "early": 15, "peak": 5, "day": 10, "evening": 10, "late": 15 } },
+    "local": { "speed": 40, "first": 330, "last": 1410, "headway": { "early": 30, "peak": 15, "day": 20, "evening": 30, "late": 30 } }
+  },
+  "classify": {
+    "subwayCompanies": ["東京メトロ", "東京地下鉄", "東京都交通局", "横浜市交通局", "横浜市営"],
+    "jrCompanies": ["JR東日本"],
+    "jrCoreRadiusKm": 25,
+    "localRadiusKm": 55,
+    "localCompanies": ["小湊鉄道", "いすみ鉄道", "銚子電気鉄道", "流鉄", "山万", "秩父鉄道", "わたらせ", "真岡鐵道", "芝山鉄道", "箱根登山", "江ノ島電鉄", "伊豆箱根", "関東鉄道", "ひたちなか"],
+    "center": { "lat": 35.6812, "lon": 139.7671 }
+  }
+}

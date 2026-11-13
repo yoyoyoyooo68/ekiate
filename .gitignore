@@ -2,3 +2,5 @@ node_modules
 dist
 public/data
 *.local
+data/ekidata/
+.DS_Store
