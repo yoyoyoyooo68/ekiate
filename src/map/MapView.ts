@@ -1,5 +1,6 @@
 import { INF, type Leg } from '../routing/csa';
 import type { Network } from '../types';
+import { schematicLayout } from './layout';
 import { themeAt } from './theme';
 
 type Pt = { x: number; y: number };
@@ -70,10 +71,7 @@ export class MapView {
     this.labels = opts.labels;
     container.appendChild(this.canvas);
     this.canvas.className = 'map-canvas';
-    const lats = net.stations.map((s) => s.lat);
-    const lat0 = (Math.min(...lats) + Math.max(...lats)) / 2;
-    const k = Math.cos((lat0 * Math.PI) / 180);
-    this.world = net.stations.map((s) => ({ x: s.lon * k * 1000, y: -s.lat * 1000 }));
+    this.world = schematicLayout(net);
     this.labelAlways = net.stations.length < 100;
     this.lineOf = new Map();
     net.lines.forEach((l, li) => l.stations.forEach((s) => this.lineOf.set(`${li}:${s}`, 1)));

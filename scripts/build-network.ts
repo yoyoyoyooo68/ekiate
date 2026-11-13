@@ -4,6 +4,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Line, Network, Station } from '../src/types';
 import { km } from './lib/geo';
+import { lineColor } from './lib/line-colors';
 import { parseCsv } from './lib/csv';
 
 export type Kind = 'subway' | 'jrCore' | 'suburban' | 'local';
@@ -284,7 +285,7 @@ export function buildNetwork(raw: RawCsv, defaults: Defaults, overrides: Overrid
     else if (c.jrCompanies.some((s) => company.includes(s))) kind = dist <= c.jrCoreRadiusKm ? 'jrCore' : 'suburban';
     else kind = 'suburban';
     const ov = { ...(overrides.companies?.[company] ?? {}), ...(overrides.lines[row.line_name] ?? overrides.lines[row.line_cd] ?? {}) } as Partial<{ kind: Kind; speed: number; first: number; last: number; headway: Headway }>;
-    const color = /^[0-9a-fA-F]{6}$/.test(row.line_color_c) ? `#${row.line_color_c}` : '#888888';
+    const color = /^[0-9a-fA-F]{6}$/.test(row.line_color_c) ? `#${row.line_color_c}` : lineColor(row.line_name, company);
     parts.forEach((p, k) => {
       const li = lines.length;
       let name = row.line_name;

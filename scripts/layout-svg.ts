@@ -1,0 +1,15 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { schematicLayout } from '../src/map/layout';
+const net = JSON.parse(readFileSync('public/data/network.json', 'utf8'));
+const t0 = Date.now();
+const pos = schematicLayout(net);
+console.log('layout ms', Date.now() - t0);
+const xs = pos.map((p) => p.x), ys = pos.map((p) => p.y);
+const x0 = Math.min(...xs), y0 = Math.min(...ys), x1 = Math.max(...xs), y1 = Math.max(...ys);
+const k = 14;
+const W = (x1 - x0) * k + 40, H = (y1 - y0) * k + 40;
+let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="100%" height="100%" fill="#fff"/>`;
+const P = (i: number) => `${((pos[i].x - x0) * k + 20).toFixed(1)},${((pos[i].y - y0) * k + 20).toFixed(1)}`;
+for (const l of net.lines) s += `<polyline fill="none" stroke="${l.color}" stroke-width="2.5" points="${l.stations.map(P).join(' ')}${l.loop ? ' ' + P(l.stations[0]) : ''}"/>`;
+net.stations.forEach((st: any, i: number) => { const [x, y] = P(i).split(','); s += `<circle cx="${x}" cy="${y}" r="2.2" fill="#fff" stroke="#333" stroke-width="0.8"/>`; if (st.lines.length >= 4) s += `<text x="${x}" y="${y}" font-size="7" fill="#000">${st.name}</text>`; });
+writeFileSync(process.argv[2] ?? '/tmp/layout.svg', s + '</svg>');
