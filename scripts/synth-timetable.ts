@@ -23,10 +23,12 @@ export function lineOffset(lineCd: number): number {
   return (lineCd * 7919) % 5;
 }
 
-export function synthTimetable(net: Network, meta: LineMeta[], defaults: Defaults): Conn[] {
+/** skip: 概算を作らない路線（本物の時刻表がある路線）の index */
+export function synthTimetable(net: Network, meta: LineMeta[], defaults: Defaults, skip: Set<number> = new Set()): Conn[] {
   const conns: Conn[] = [];
   let trip = 0;
   net.lines.forEach((line, li) => {
+    if (skip.has(li)) return;
     const m = meta[li];
     const k = defaults.kinds[m.kind];
     const speed = m.speed ?? k.speed;

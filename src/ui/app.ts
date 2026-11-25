@@ -134,7 +134,11 @@ export class App {
           h('button', { type: 'button', class: 'btn big', onclick: () => this.openRules() }, 'ルール説明')),
         h('p', { class: 'credit' }, `データ版 ${net.version}`),
         store.get(PASS_KEY) ? h('button', { type: 'button', class: 'link', onclick: () => { store.del(PASS_KEY); location.reload(); } }, '合言葉を入力しなおす') : null,
-        h('p', { class: 'credit' }, net.lines.some((l) => l.timeSource === 'odpt') ? '公共交通オープンデータセンターのデータを利用' : ''),
+        net.lines.some((l) => l.timeSource === 'odpt')
+          ? h('p', { class: 'credit' },
+              '列車時刻: 公共交通オープンデータセンターのデータ（東京メトロ・東京都交通局・横浜市交通局・東京臨海高速鉄道・首都圏新都市鉄道・多摩都市モノレール）を加工して作成。' +
+              'データの正確性・完全性は保証されません。本サイトについて各事業者へのお問い合わせはご遠慮ください。')
+          : null,
         h('p', { class: 'credit' }, '駅・路線データ: 駅データ.jp')));
     this.show(el);
   }

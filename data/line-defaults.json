@@ -1,5 +1,5 @@
 {
-  "version": "β1",
+  "version": "β2",
   "_comment": "概算ダイヤの既定値（設計図 2.5.3 / 2.5.4）。時刻は 0:00 からの分。first=始発（起点発）、last=終電（終点着）。headway は時間帯別の運転間隔（分）: early=〜7:00, peak=7:00〜9:00, day=9:00〜20:00, evening=20:00〜23:00, late=23:00〜",
   "stopMinutes": 0.5,
   "kinds": {

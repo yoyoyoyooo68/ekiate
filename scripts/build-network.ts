@@ -59,7 +59,7 @@ export function readEkidata(dir: string): RawCsv {
 const PREFS = new Set(['11', '12', '13', '14']); // 埼玉・千葉・東京・神奈川
 
 /** 表記ゆれ（ヶ/ケ、〈〉/（））をそろえた駅名。同じ駅かどうかの比較に使う */
-const norm = (n: string) => n.replace(/ヶ/g, 'ケ').replace(/ヵ/g, 'カ').replace(/〈/g, '（').replace(/〉/g, '）');
+export const norm = (n: string) => n.replace(/ヶ/g, 'ケ').replace(/ヵ/g, 'カ').replace(/〈/g, '（').replace(/〉/g, '）');
 const toHira = (s: string) => s.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 const edgeKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
 
@@ -149,7 +149,13 @@ export function decompose(edges: [number, number][]): { path: number[]; loop: bo
   return out;
 }
 
-export type BuildResult = { network: Network; meta: LineMeta[]; warnings: string[] };
+export type BuildResult = {
+  network: Network;
+  meta: LineMeta[];
+  warnings: string[];
+  /** 「line_cd|駅名（表記ゆれをそろえたもの）」→ 駅 index。ODPT の駅の対応付けに使う */
+  stationOf: Map<string, number>;
+};
 
 export function buildNetwork(raw: RawCsv, defaults: Defaults, overrides: Overrides, tweaks: Tweaks): BuildResult {
   const warnings: string[] = [];
@@ -339,5 +345,7 @@ export function buildNetwork(raw: RawCsv, defaults: Defaults, overrides: Overrid
   for (const [x, y] of tweaks.transfer.remove) for (const a of lookup(x)) for (const b of lookup(y)) pairs.delete(edgeKey(a, b));
 
   const network: Network = { version: defaults.version, stations, lines, transferPairs: [...pairs.values()] };
-  return { network, meta, warnings };
+  const stationOf = new Map<string, number>();
+  for (const s of st.values()) stationOf.set(`${s.lineCd}|${norm(s.name)}`, stationIdx(s.cd));
+  return { network, meta, warnings, stationOf };
 }

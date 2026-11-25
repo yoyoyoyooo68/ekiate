@@ -27,18 +27,20 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      # β 版: 暗号化して置いた駅データ.jp の CSV を戻し、概算ダイヤを作る。
-      # CSV（data/ekidata.enc）が無いときはダミーデータで公開する。ODPT 承認後は fetch / map の処理をここに足す。
+      # 暗号化して置いた駅データ.jp の CSV を戻し、ODPT の時刻表（Secrets の ODPT_KEY があれば）を取って、
+      # ODPT にある路線は本物の時刻、ほかは概算ダイヤで作る。CSV（data/ekidata.enc）が無いときはダミーデータで公開する。
       - name: データ作成
         run: |
           if [ -f data/ekidata.enc ]; then
             npm run csv:unpack
+            if [ -n "$ODPT_KEY" ]; then npm run odpt:fetch; fi
             npm run build:beta
           else
             npm run build
           fi
         env:
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
+          ODPT_KEY: ${{ secrets.ODPT_KEY }}
       - name: 合言葉でデータを暗号化
         run: npm run encrypt
         env:

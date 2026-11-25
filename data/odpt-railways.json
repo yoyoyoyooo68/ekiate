@@ -1,0 +1,32 @@
+{
+  "_comment": "ODPT の路線 → 駅データ.jp の line_cd。ここに書いた路線は ODPT の列車時刻表（平日）で時刻を作り、書いていない路線は概算ダイヤのまま。excludeTrainTypes は収録しない有料列車。stationAlias は ODPT の駅名 → 駅データ.jp の駅名（名前で対応が取れないとき）",
+  "railways": {
+    "odpt.Railway:TokyoMetro.Ginza": 28001,
+    "odpt.Railway:TokyoMetro.Marunouchi": 28002,
+    "odpt.Railway:TokyoMetro.MarunouchiBranch": 28002,
+    "odpt.Railway:TokyoMetro.Hibiya": 28003,
+    "odpt.Railway:TokyoMetro.Tozai": 28004,
+    "odpt.Railway:TokyoMetro.Chiyoda": 28005,
+    "odpt.Railway:TokyoMetro.Yurakucho": 28006,
+    "odpt.Railway:TokyoMetro.Hanzomon": 28008,
+    "odpt.Railway:TokyoMetro.Namboku": 28009,
+    "odpt.Railway:TokyoMetro.Fukutoshin": 28010,
+    "odpt.Railway:Toei.Oedo": 99301,
+    "odpt.Railway:Toei.Asakusa": 99302,
+    "odpt.Railway:Toei.Mita": 99303,
+    "odpt.Railway:Toei.Shinjuku": 99304,
+    "odpt.Railway:Toei.Arakawa": 99305,
+    "odpt.Railway:Toei.NipporiToneri": 99342,
+    "odpt.Railway:MIR.TsukubaExpress": 99309,
+    "odpt.Railway:YokohamaMunicipal.Blue": 99316,
+    "odpt.Railway:YokohamaMunicipal.Green": 99343,
+    "odpt.Railway:TamaMonorail.TamaMonorail": 99334,
+    "odpt.Railway:TWR.Rinkai": 99337
+  },
+  "excludeTrainTypes": [
+    "odpt.TrainType:TokyoMetro.LimitedExpress",
+    "odpt.TrainType:TokyoMetro.S-TRAIN",
+    "odpt.TrainType:TokyoMetro.TH-LINER"
+  ],
+  "stationAlias": {}
+}
